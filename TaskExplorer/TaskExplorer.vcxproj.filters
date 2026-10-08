@@ -209,6 +209,9 @@
     <ClCompile Include="GUI\SystemInfo\SystemInfoWindow.cpp">
       <Filter>TaskExplorer\SystemInfo</Filter>
     </ClCompile>
+    <ClCompile Include="GUI\SystemInfo\PerformanceDashboard.cpp">
+      <Filter>TaskExplorer\SystemInfo</Filter>
+    </ClCompile>
     <ClCompile Include="GUI\TaskInfo\DotNetView.cpp">
       <Filter>TaskExplorer\TaskInfo</Filter>
     </ClCompile>

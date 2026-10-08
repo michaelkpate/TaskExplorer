@@ -108,6 +108,7 @@ bool CLinuxGpuMonitor::UpdateAdapters()
 			I->TimeUsage = Old->TimeUsage;
 			I->Memory.DedicatedUsage = Old->Memory.DedicatedUsage;
 			I->Nodes = Old->Nodes;
+			I->UsageAvailable = Old->UsageAvailable;
 		}
 	}
 
@@ -136,10 +137,12 @@ bool CLinuxGpuMonitor::UpdateGpuStats()
 		// guessed at. This VM's emulated bochs-drm adapter is one such case.
 		//
 		const QString Busy = ProcFs::ReadFileStr(Device + "/gpu_busy_percent").trimmed();
+		I->UsageAvailable = false;
 		if (!Busy.isEmpty())
 		{
 			bool bOk = false;
 			const int Percent = Busy.toInt(&bOk);
+			I->UsageAvailable = bOk;
 			if (bOk)
 				I->TimeUsage = qBound(0.0f, (float)Percent / 100.0f, 1.0f);
 		}

@@ -36,6 +36,7 @@ extern "C" {
 #include "Search/ModuleSearch.h"
 #include "Search/MemorySearch.h"
 #include "SystemInfo/SystemInfoWindow.h"
+#include "SystemInfo/PerformanceDashboard.h"
 #include "../../MiscHelpers/Common/CheckableMessageBox.h"
 #include "MultiErrorDialog.h"
 #include "PersistenceConfig.h"
@@ -380,6 +381,21 @@ CTaskExplorer::CTaskExplorer(QWidget *parent)
 		m_pMenuView->addSeparator();
 		m_pMenuSystemInfo = m_pMenuView->addAction(MakeActionIcon(":/Actions/SysInfo"), tr("System Info"), this, SLOT(OnSystemInfo()));
 		m_pMenuSystemInfo->setShortcut(QKeySequence("Ctrl+S"));
+		auto dashboardAction = m_pMenuView->addAction(tr("Performance Dashboard"));
+		dashboardAction->setShortcut(QKeySequence("Ctrl+Shift+D"));
+		connect(dashboardAction, &QAction::triggered, this, [this]() {
+			if (m_pPerformanceDashboard) {
+				m_pPerformanceDashboard->showNormal();
+				m_pPerformanceDashboard->raise();
+				m_pPerformanceDashboard->activateWindow();
+				return;
+			}
+			// A parent would make this a native owned window on Windows, which
+			// minimizes it together with TaskExplorer. Keep it independent so it
+			// remains visible when the main window is minimized to the tray.
+			m_pPerformanceDashboard = new CPerformanceDashboard();
+			m_pPerformanceDashboard->show();
+		});
 		m_pMenuView->addSeparator();
 		m_pMenuPauseRefresh = m_pMenuView->addAction(MakeActionIcon(":/Actions/Pause"), tr("Pause Refresh"));
 		m_pMenuPauseRefresh->setCheckable(true);
@@ -1616,6 +1632,11 @@ void CTaskExplorer::closeEvent(QCloseEvent *e)
 			}
 		}
 	}
+
+	// The dashboard is intentionally parentless so minimizing the main window
+	// does not minimize it. Close it explicitly when the application really exits.
+	if (m_pPerformanceDashboard)
+		m_pPerformanceDashboard->close();
 
 	QApplication::quit();
 }

@@ -2,6 +2,7 @@
 #include "../API/SecurityInfo.h"
 
 #include <QtWidgets/QMainWindow>
+#include <QPointer>
 #include "ProcessTree.h"
 #include "SystemInfo/SystemInfoView.h"
 #include "TaskInfo/TaskInfoView.h"
@@ -541,6 +542,7 @@ private:
 
 	QSystemTrayIcon*	m_pTrayIcon;
 	QMenu*				m_pTrayMenu;
+	QPointer<QWidget>	m_pPerformanceDashboard;
 
 	QToolBar*			m_pToolBar;
 

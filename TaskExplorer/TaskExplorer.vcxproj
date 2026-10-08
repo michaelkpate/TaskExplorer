@@ -526,6 +526,7 @@
     <ClCompile Include="GUI\SystemInfo\ServicesView.cpp" />
     <ClCompile Include="GUI\SystemInfo\SystemInfoView.cpp" />
     <ClCompile Include="GUI\SystemInfo\SystemInfoWindow.cpp" />
+    <ClCompile Include="GUI\SystemInfo\PerformanceDashboard.cpp" />
     <ClCompile Include="GUI\SystemInfo\SystemView.cpp" />
     <ClCompile Include="GUI\SystemInfo\WinSvcShutdown.cpp" />
     <ClCompile Include="GUI\SystemInfo\WinSvcTrigger.cpp" />

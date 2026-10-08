@@ -214,6 +214,8 @@ set(TE_GUI
     GUI/SystemInfo/SystemInfoView.cpp
     GUI/SystemInfo/SystemInfoView.h
     GUI/SystemInfo/SystemInfoWindow.cpp
+    GUI/SystemInfo/PerformanceDashboard.cpp
+    GUI/SystemInfo/PerformanceDashboard.h
     GUI/SystemInfo/SystemInfoWindow.h
     GUI/SystemInfo/SystemView.cpp
     GUI/SystemInfo/SystemView.h
@@ -304,6 +306,8 @@ set(TE_CORE_WIN
     API/Windows/WindowsAPI.cpp
     API/Windows/WindowsAPI.h
     API/Windows/WindowsHelpers.cpp
+    API/Windows/WinAccessRights.cpp
+    API/Windows/WinAccessRights.h
     API/Windows/WinDriver.cpp
     API/Windows/WinDriver.h
     API/Windows/WinDumper.cpp
@@ -329,7 +333,6 @@ set(TE_CORE_WIN
     API/Windows/WinProcess.cpp
     API/Windows/Monitors/EventMonitor.cpp
     API/Windows/Monitors/FirewallMonitor.cpp
-    API/Windows/SystemHacker/xphdata.c
     API/Windows/WinRun.cpp
     API/Windows/WinSecurity.cpp
     API/Windows/WinSecurityEditor.cpp
@@ -395,7 +398,8 @@ set(TE_GUI_WIN
 
     GUI/DriverWindow.cpp
     GUI/DynDataUpdater.cpp
-    GUI/PlatformAbout.cpp
+    ../MiniDump/MiniDumpFilter.cpp
+    ../MiniDump/MiniDumpFilter.h
     GUI/DriverWindow.h
     GUI/SecurityExplorer.cpp
     GUI/SecurityExplorer.h
@@ -520,6 +524,10 @@ set(TE_GUI_LINUX
 if(WIN32)
     list(APPEND TE_CORE ${TE_CORE_WIN})
     list(APPEND TE_GUI  ${TE_GUI_WIN})
+    # Detours controls its CRT include order and defines its own Max function.
+    # Injecting our stdafx header breaks both contracts.
+    file(GLOB TE_DETOURS_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/API/Windows/WinHelpers/FuncHook/Detours/*.cpp")
+    set_source_files_properties(${TE_DETOURS_SOURCES} PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
 elseif(UNIX AND NOT APPLE)
     list(APPEND TE_CORE ${TE_CORE_LINUX})
     list(APPEND TE_GUI  ${TE_GUI_LINUX})
@@ -602,6 +610,18 @@ target_link_libraries(TaskExplorer PRIVATE
 )
 
 if(WIN32)
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(TE_PH_ARCH "64")
+    else()
+        set(TE_PH_ARCH "32")
+    endif()
+    # The System Informer dependencies are built from their bundled VS
+    # solutions (see .github/workflows/windows.yml), separately from CMake.
+    target_link_directories(TaskCore PRIVATE
+        "${CMAKE_SOURCE_DIR}/ProcessHacker/phlib/bin/$<CONFIG>${TE_PH_ARCH}"
+        "${CMAKE_SOURCE_DIR}/ProcessHacker/kphlib/bin/$<CONFIG>${TE_PH_ARCH}"
+        "${CMAKE_SOURCE_DIR}/ProcessHacker/tools/thirdparty/bin/$<CONFIG>${TE_PH_ARCH}"
+    )
     #
     # phlib is the core's business only. If a change makes the executable need
     # it again, that is a layering regression, not a missing link line.
@@ -611,8 +631,13 @@ if(WIN32)
         "${CMAKE_SOURCE_DIR}/ProcessHacker/kphlib/include"
         "${CMAKE_SOURCE_DIR}/ProcessHacker/phnt/include"
     )
+    target_include_directories(TaskExplorer PRIVATE
+        "${CMAKE_SOURCE_DIR}/ProcessHacker/phlib/include"
+        "${CMAKE_SOURCE_DIR}/ProcessHacker/kphlib/include"
+        "${CMAKE_SOURCE_DIR}/ProcessHacker/phnt/include"
+    )
     target_link_libraries(TaskCore PRIVATE
-        ntdll userenv uxtheme aclui winsta iphlpapi ws2_32 phlib
+        ntdll userenv uxtheme aclui winsta iphlpapi ws2_32 winhttp gdiplus phlib
         netapi32 rasapi32 taskschd shlwapi cfgmgr32 gdi32 wbemuuid
         dnsapi rpcrt4 thirdparty windowscodecs comdlg32
     )
@@ -628,6 +653,12 @@ if(WIN32)
     endif()
     target_sources(TaskExplorer PRIVATE Resources/TaskExplorer.rc)
     target_sources(TaskCore PRIVATE TaskCore.rc)
+    # phlib imports TaskDialogIndirect from comctl32. This API lives in the
+    # version 6 common-controls activation context, so the executable manifest
+    # must opt in even though the UI itself is Qt-based.
+    target_link_options(TaskExplorer PRIVATE
+        "/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'"
+    )
 elseif(UNIX AND NOT APPLE)
     target_link_libraries(TaskCore PRIVATE Qt6::DBus)
     target_link_libraries(TaskExplorer PRIVATE Qt6::DBus)
@@ -664,7 +695,7 @@ if(UNIX AND NOT APPLE)
         INSTALL_RPATH "${TE_APP_RPATH}")
 endif()
 
-target_precompile_headers(TaskCore PRIVATE stdafx.h)
+target_precompile_headers(TaskCore PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/stdafx.h>")
 #
 # Only the front end gets the widget half of stdafx.h; see the header.
 #

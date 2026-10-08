@@ -165,7 +165,12 @@ QString CWinGpuMonitor::QueryDeviceProperty(/*DEVINST*/quint32 DeviceHandle, con
     {
     case DEVPROP_TYPE_STRING:
         {
-            return QString::fromWCharArray((PWCHAR)buffer, bufferSize / sizeof(wchar_t)).trimmed();
+            QString value = QString::fromWCharArray((PWCHAR)buffer, bufferSize / sizeof(wchar_t));
+            // Configuration Manager reports the byte length including the
+            // terminating NUL. Keep that terminator out of the visible label.
+            while (!value.isEmpty() && value.back().isNull())
+                value.chop(1);
+            return value.trimmed();
         }
         break;
     case DEVPROP_TYPE_FILETIME:
@@ -940,10 +945,10 @@ bool CWinGpuMonitor::UpdateGpuStats()
         //dedicatedTotal = EtLookupTotalGpuDedicated();
         //sharedTotal = EtLookupTotalGpuShared();
 
-        float tempGpuUsage = 0;
-
         foreach(SGpuAdapter * gpuAdapter, m_GpuAdapterList)
         {
+            float tempGpuUsage = 0;
+            gpuAdapter->Info.UsageAvailable = gpuAdapter->NodeCount > 0;
             for (ULONG j = 0; j < gpuAdapter->NodeCount; j++)
             {
                 FLOAT usage = EtLookupTotalGpuAdapterEngineUtilization(gpuAdapter->AdapterLuid, j);
@@ -964,6 +969,7 @@ bool CWinGpuMonitor::UpdateGpuStats()
             foreach(SGpuAdapter * gpuAdapter, m_GpuAdapterList)
             {
                 float tempGpuUsage = 0;
+                gpuAdapter->Info.UsageAvailable = gpuAdapter->NodeCount > 0;
 
                 for (ULONG j = 0; j < gpuAdapter->NodeCount; j++)
                 {

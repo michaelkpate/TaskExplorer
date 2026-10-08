@@ -349,7 +349,7 @@ VOID CALLBACK FwMonEventCallback(_Inout_ PVOID FwContext, _In_ const FWPM_NET_EV
         if (FwEvent->header.appId.data && FwEvent->header.appId.size > 0)
         {
             PPH_STRING fileName = PhCreateStringEx((PWSTR)FwEvent->header.appId.data, (SIZE_T)FwEvent->header.appId.size);
-            ProcessFileNameString = CastPhString(PhResolveDevicePrefix(fileName));
+            ProcessFileNameString = CastPhString(PhResolveDevicePrefix(&fileName->sr));
             PhDereferenceObject(fileName);
         }
 
@@ -443,8 +443,10 @@ bool CFirewallMonitor::StartFwMonitor()
     }
    
     session.flags = 0;// FWPM_SESSION_FLAG_DYNAMIC;
-    session.displayData.name  = L"PhFirewallMonitoringSession";
-    session.displayData.description = L"Non-Dynamic session for Task Explorer";
+    wchar_t sessionName[] = L"PhFirewallMonitoringSession";
+    wchar_t sessionDescription[] = L"Non-Dynamic session for Task Explorer";
+    session.displayData.name = sessionName;
+    session.displayData.description = sessionDescription;
 
     // Create a non-dynamic BFE session
     if (FwpmEngineOpen(NULL, RPC_C_AUTHN_WINNT, NULL, &session, &m->FwEngineHandle) != ERROR_SUCCESS)

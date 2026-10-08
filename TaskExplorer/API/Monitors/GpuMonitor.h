@@ -100,6 +100,7 @@ public:
 		float TimeUsage;
 
 		SGpuMemory Memory;
+		bool UsageAvailable = false;
 		QList<SGpuNode> Nodes;
 	};
 
