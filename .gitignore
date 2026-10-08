@@ -19,3 +19,14 @@ CMakeUserPresets.json
 /qwt/qwt/x64
 /TaskExplorer/GeneratedFiles
 /TaskExplorer/x64
+
+# Local build output and logs
+/ProcessHacker/bin/
+/ProcessHacker/build-cmake/
+/ProcessHacker/kphlib/bin/
+/ProcessHacker/phlib/bin/
+/ProcessHacker/phlib/obj/
+/ProcessHacker/tools/peview/obj/
+/ProcessHacker/tools/thirdparty/bin/
+/ProcessHacker/tools/thirdparty/obj/
+/logs/
